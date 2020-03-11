@@ -101,7 +101,7 @@ RCT_REMAP_METHOD(data,
                     index += 1;
 
                     [itemArray addObject: @{
-                                            @"type": [filePath pathExtension],
+                                            @"type": @"image",
                                             @"value": filePath
                                             }];
                     if (callback && (index == [attachments count])) {
@@ -115,7 +115,7 @@ RCT_REMAP_METHOD(data,
                 [urlProvider loadItemForTypeIdentifier:URL_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
                     NSURL *url = (NSURL *)item;
                     [itemArray addObject: @{
-                                            @"type": @"text/plain",
+                                            @"type": @"url",
                                             @"value": [url absoluteString]
                                             }];
                     if (callback && (index == [attachments count])) {
@@ -128,7 +128,7 @@ RCT_REMAP_METHOD(data,
                     NSString *text = (NSString *)item;
                     index += 1;
                     [itemArray addObject: @{
-                                            @"type": @"text/plain",
+                                            @"type": @"text",
                                             @"value": text
                                             }];
                     if (callback && (index == [attachments count])) {
