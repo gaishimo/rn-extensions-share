@@ -1,6 +1,7 @@
 #import "ReactNativeShareExtension.h"
 #import "React/RCTRootView.h"
 #import <MobileCoreServices/MobileCoreServices.h>
+#import <Firebase.h>
 
 #define URL_IDENTIFIER @"public.url"
 #define IMAGE_IDENTIFIER @"public.image"
@@ -36,6 +37,43 @@ RCT_EXPORT_MODULE();
 
     self.view = rootView;
 }
+
+RCT_REMAP_METHOD(uploadFile,
+                 uid:(NSString *)uid
+                  filePath:(NSString *)filePath
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+    FIRStorage *storage = [FIRStorage storage];
+    FIRStorageReference *storageRef = [storage reference];
+    NSURL* url = [NSURL URLWithString:filePath];
+    NSString *filename = [[url lastPathComponent] lowercaseString];
+    NSData *data = [NSData dataWithContentsOfURL:url];
+    UIImage *image = [UIImage imageWithData:data];
+    NSDate *now = [NSDate date];
+    double timestamp = [now timeIntervalSince1970] * 1000;
+    NSString *uploadedPath = [NSString stringWithFormat:@"%.0f_%@", timestamp, filename];
+    NSString *refPath = [NSString stringWithFormat:@"users/%@/%@", uid, uploadedPath];
+    FIRStorageReference *imageRef = [storageRef child:refPath];
+    FIRStorageMetadata *metadata = [[FIRStorageMetadata alloc] init];
+    metadata.contentType = @"image/jpeg";
+    [imageRef putData:data
+             metadata:metadata
+            completion:^(FIRStorageMetadata *metadata,
+            NSError *error) {
+        if (error) {
+            reject(@"error", error.description, nil);
+        } else {
+            NSDictionary *result = @{
+                @"uploadedPath" : uploadedPath,
+                @"width": [NSNumber numberWithDouble:image.size.width],
+                @"height": [NSNumber numberWithDouble:image.size.height]
+            };
+            resolve(result);
+        }
+    }];
+}
+
 
 RCT_EXPORT_METHOD(close) {
     [extensionContext completeRequestReturningItems:nil
@@ -97,7 +135,9 @@ RCT_REMAP_METHOD(data,
                     }
                     NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
 
-                    [UIImageJPEGRepresentation(sharedImage, 1.0) writeToFile:filePath atomically:YES];
+                    [UIImageJPEGRepresentation(sharedImage, 0.8) writeToFile:filePath atomically:YES];
+//                    NSData *imageData = UIImageJPEGRepresentation(sharedImage, 1.0);
+//                    NSString *encodedString = [imageData base64EncodedStringWithOptions:0];
                     index += 1;
 
                     [itemArray addObject: @{
